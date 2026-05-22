@@ -1,0 +1,18 @@
+Cost for Application=FoodieDash over last 7 days (2026-05-15 → 2026-05-22):
+------------------------------------------------------------
+  AWS Network Firewall                           $   11.17
+  Amazon DocumentDB (with MongoDB compatibility) $    2.25
+  EC2 - Other                                    $    0.69
+  Amazon Elastic Load Balancing                  $    0.34
+  AWS Lambda                                     $    0.03
+  AWS Secrets Manager                            $    0.01
+  AmazonCloudWatch                               $    0.01
+  Amazon API Gateway                             $    0.00
+  Amazon Simple Storage Service                  $    0.00
+  Amazon EC2 Container Registry (ECR)            $    0.00
+  Amazon Virtual Private Cloud                   $    0.00
+  Amazon Elastic File System                     $    0.00
+  Amazon CloudFront                              $    0.00
+  Amazon Elastic Compute Cloud - Compute         $    0.00
+------------------------------------------------------------
+  TOTAL                                          $   14.50

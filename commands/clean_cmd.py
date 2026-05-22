@@ -46,7 +46,27 @@ from commands._common import parse_kv
 
 def _find_targets(tag_key, tag_val):
     """Return {"ec2": [...], "volume": [...]} matching tag in non-terminal state."""
-    raise NotImplementedError("TODO: implement _find_targets — see test_clean.py")
+    ec2 = boto3.client('ec2')
+    targets = {"ec2": [], "volume": []}
+    
+    # Find EC2s
+    paginator = ec2.get_paginator('describe_instances')
+    for page in paginator.paginate(Filters=[{'Name': f'tag:{tag_key}', 'Values': [tag_val]}]):
+        for res in page.get('Reservations', []):
+            for inst in res.get('Instances', []):
+                state = inst.get('State', {}).get('Name')
+                if state not in ['terminated', 'shutting-down']:
+                    targets["ec2"].append(inst['InstanceId'])
+                    
+    # Find volumes
+    paginator = ec2.get_paginator('describe_volumes')
+    for page in paginator.paginate(Filters=[{'Name': f'tag:{tag_key}', 'Values': [tag_val]}]):
+        for vol in page.get('Volumes', []):
+            state = vol.get('State')
+            if state == 'available':
+                targets["volume"].append(vol['VolumeId'])
+                
+    return targets
 
 
 def run(args):
@@ -56,4 +76,31 @@ def run(args):
         args.tag    — "key=value" string (REQUIRED)
         args.apply  — bool, must be True to actually delete (default False = dry-run)
     """
-    raise NotImplementedError("TODO: implement run() — see module docstring")
+    tag_key, tag_val = parse_kv(args.tag)
+    targets = _find_targets(tag_key, tag_val)
+    
+    ec2s = targets["ec2"]
+    vols = targets["volume"]
+    
+    if not ec2s and not vols:
+        print("Nothing to clean")
+        return
+        
+    print(f"Plan: terminate {len(ec2s)} EC2 instance(s), delete {len(vols)} EBS volume(s).")
+    
+    if not args.apply:
+        print("(dry-run — pass --apply to actually delete)")
+        return
+        
+    ec2 = boto3.client('ec2')
+    if ec2s:
+        ec2.terminate_instances(InstanceIds=ec2s)
+        for iid in ec2s:
+            print(f"Terminated EC2 {iid}")
+            
+    if vols:
+        for vid in vols:
+            ec2.delete_volume(VolumeId=vid)
+            print(f"Deleted volume {vid}")
+            
+    print("Done.")
